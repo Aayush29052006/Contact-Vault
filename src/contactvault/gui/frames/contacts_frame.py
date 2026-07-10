@@ -22,28 +22,45 @@ class ContactsFrame(ctk.CTkFrame):
         self._build_list_area()
 
         self.refresh()
-
     def _build_add_form(self) -> None:
         form = ctk.CTkFrame(self)
         form.grid(row=0, column=0, sticky="ew", pady=(0, 10))
-        form.grid_columnconfigure((0, 1), weight=1)
+        form.grid_columnconfigure(0, weight=1)
+        form.grid_columnconfigure(1, weight=0)
 
-        self.name_entry = ctk.CTkEntry(form, placeholder_text="Name")
-        self.name_entry.grid(row=0, column=0, padx=(10, 5), pady=10, sticky="ew")
+        fields = ctk.CTkFrame(form, fg_color="transparent")
+        fields.grid(row=0, column=0, sticky="ew", padx=(10, 10), pady=10)
+        fields.grid_columnconfigure((0, 1), weight=1)
 
-        self.email_entry = ctk.CTkEntry(form, placeholder_text="Email")
-        self.email_entry.grid(row=0, column=1, padx=5, pady=10, sticky="ew")
+        self.name_entry = ctk.CTkEntry(fields, placeholder_text="Name")
+        self.name_entry.grid(row=0, column=0, padx=(0, 8), sticky="ew")
 
-        self.add_btn = ctk.CTkButton(form, text="Add contact", command=self._on_add)
-        self.add_btn.grid(row=0, column=2, padx=(5, 10), pady=10)
+        self.email_entry = ctk.CTkEntry(fields, placeholder_text="Email")
+        self.email_entry.grid(row=0, column=1, padx=(8, 0), sticky="ew")
+
+        buttons = ctk.CTkFrame(form, fg_color="transparent")
+        buttons.grid(row=0, column=1, sticky="e", pady=10)
+
+        self.add_btn = ctk.CTkButton(
+            buttons, text="Add contact", width=130, border_spacing=10, command=self._on_add
+        )
+        self.add_btn.grid(row=0, column=0, padx=(0, 8))
 
         self.undo_btn = ctk.CTkButton(
-            form, text="Undo", width=70, fg_color="transparent",
-            border_width=1, command=self._on_undo,
+            buttons, text="Undo", width=90, border_spacing=10,
+            fg_color="transparent", border_width=1,
+            command=self._on_undo,
         )
-        self.undo_btn.grid(row=0, column=3, padx=(0, 10), pady=10)
+        self.undo_btn.grid(row=0, column=1)
 
-        # Enter submits the form (add or save-edit); Escape cancels an edit.
+        # DEBUG MARKER -- a real widget with a forced fixed width, not a
+        # padding value that can get silently absorbed. This proves the
+        # margin exists. We'll recolor it to match the background once
+        # you confirm you can see it.
+        margin_spacer = ctk.CTkFrame(form, width=24, height=10, fg_color="transparent")
+        margin_spacer.grid(row=0, column=2, sticky="ns", pady=10)
+        margin_spacer.grid_propagate(False)
+
         for entry in (self.name_entry, self.email_entry):
             entry.bind("<Return>", lambda e: self._on_add())
             entry.bind("<Escape>", lambda e: self._cancel_edit())
@@ -59,9 +76,6 @@ class ContactsFrame(ctk.CTkFrame):
         self.list_frame.grid(row=2, column=0, sticky="nsew")
         self.list_frame.grid_columnconfigure(0, weight=1)
 
-        # Keyboard scrolling: Page Up/Down, Home/End, Up/Down arrows.
-        # The scrollable frame's inner canvas needs focus to receive
-        # key events, so we grab it on mouse-enter.
         canvas = self.list_frame._parent_canvas
         canvas.bind("<Enter>", lambda e: canvas.focus_set())
         canvas.bind("<Prior>", lambda e: canvas.yview_scroll(-1, "pages"))
@@ -98,13 +112,15 @@ class ContactsFrame(ctk.CTkFrame):
             ).grid(row=0, column=0, padx=10, pady=8, sticky="ew")
 
             ctk.CTkButton(
-                row, text="Edit", width=60, fg_color="transparent", border_width=1,
+                row, text="Edit", width=80, border_spacing=8,
+                fg_color="transparent", border_width=1,
                 text_color=("gray10", "gray90"),
                 command=lambda c=contact: self._start_edit(c),
             ).grid(row=0, column=1, padx=(0, 6), pady=8)
 
             ctk.CTkButton(
-                row, text="Delete", width=60, fg_color="#993C1D", hover_color="#712B13",
+                row, text="Delete", width=90, border_spacing=8,
+                fg_color="#993C1D", hover_color="#712B13",
                 command=lambda c=contact: self._on_delete(c),
             ).grid(row=0, column=2, padx=(0, 10), pady=8)
 

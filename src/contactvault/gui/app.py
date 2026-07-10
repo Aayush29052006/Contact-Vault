@@ -29,9 +29,12 @@ class App(ctk.CTk):
         # Apply saved text-size preference before building any widgets.
         ctk.set_widget_scaling(config.get("text_scale", 1.0))
 
+        base_width, base_height = 960, 620
+        scale = config.get("text_scale", 1.0)
+
         self.title("ContactVault")
-        self.geometry("960x620")
-        self.minsize(780, 480)
+        self.geometry(f"{int(base_width * scale)}x{int(base_height * scale)}")
+        self.minsize(int(780 * scale), int(480 * scale))
 
         self.service = ContactService(JSONContactRepository(config["data_file"]))
 
@@ -51,17 +54,14 @@ class App(ctk.CTk):
         self.show_frame("contacts")
 
     def _build_sidebar(self) -> None:
-        sidebar = ctk.CTkFrame(self, width=180, corner_radius=0)
+        sidebar = ctk.CTkFrame(self, width=210, corner_radius=0)
         sidebar.grid(row=0, column=0, sticky="nsw")
         sidebar.grid_rowconfigure(5, weight=1)
 
-        # Explicit (light, dark) tuple -- without this the label/button
-        # text falls back to a color meant for dark backgrounds only,
-        # which is invisible in light mode.
         ctk.CTkLabel(
             sidebar, text="ContactVault", font=ctk.CTkFont(size=18, weight="bold"),
             text_color=("gray10", "gray95"),
-        ).grid(row=0, column=0, padx=20, pady=(20, 10), sticky="w")
+        ).grid(row=0, column=0, padx=16, pady=(20, 10), sticky="w")
 
         nav_items = [
             ("Contacts", "contacts"),
@@ -77,6 +77,7 @@ class App(ctk.CTk):
                 command=lambda k=key: self.show_frame(k),
             )
             btn.grid(row=i, column=0, padx=12, pady=4, sticky="ew")
+
 
     def _build_content_area(self) -> None:
         self.content = ctk.CTkFrame(self, corner_radius=0, fg_color="transparent")
