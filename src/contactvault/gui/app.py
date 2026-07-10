@@ -70,15 +70,16 @@ class App(ctk.CTk):
         brand = ctk.CTkFrame(sidebar, fg_color="transparent")
         brand.grid(row=0, column=0, padx=18, pady=(22, 26), sticky="w")
 
-        badge_size = int(36 * self.scale)
-        logo_badge = ctk.CTkFrame(brand, width=badge_size, height=badge_size,
-                                   corner_radius=int(badge_size * 0.28),
-                                   fg_color=theme.COLOR["accent"])
-        
+        # Single widget instead of a frame+label pair: a CTkLabel can
+        # have its own fg_color and corner_radius, so text can never
+        # render outside its own boundary the way it could when two
+        # separate widgets had to agree on matching sizes.
+        logo_badge = ctk.CTkLabel(
+            brand, text="CV", text_color="#FFFFFF", font=self.fonts["logo"],
+            fg_color=theme.COLOR["accent"], corner_radius=12,
+            width=44, height=44,
+        )
         logo_badge.grid(row=0, column=0, padx=(0, 10))
-        logo_badge.grid_propagate(False)
-        ctk.CTkLabel(logo_badge, text="CV", text_color="#FFFFFF",
-                     font=self.fonts["logo"]).place(relx=0.5, rely=0.5, anchor="center")
 
         ctk.CTkLabel(brand, text="ContactVault", font=self.fonts["heading"],
                      text_color=theme.COLOR["text"]).grid(row=0, column=1, sticky="w")

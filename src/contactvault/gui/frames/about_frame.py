@@ -16,14 +16,14 @@ class AboutFrame(ctk.CTkFrame):
         wrapper.pack(expand=True)
 
         badge_size = int(64 * getattr(app, "scale", 1.0))
-        badge = ctk.CTkFrame(wrapper, width=badge_size, height=badge_size,
-                              corner_radius=int(badge_size * 0.25),
-                              fg_color=theme.COLOR["accent"])
+        
+        badge = ctk.CTkLabel(
+            wrapper, text="CV", text_color="#FFFFFF",
+            font=ctk.CTkFont(size=22, weight="bold"),
+            fg_color=theme.COLOR["accent"], corner_radius=16,
+            width=64, height=64,
+        )
         badge.pack(pady=(40, 16))
-        badge.grid_propagate(False)
-
-        ctk.CTkLabel(badge, text="CV", text_color="#FFFFFF",
-                     font=ctk.CTkFont(size=24, weight="bold")).place(relx=0.5, rely=0.5, anchor="center")
 
         ctk.CTkLabel(wrapper, text="ContactVault", font=fonts["heading"],
                      text_color=theme.COLOR["text"]).pack()

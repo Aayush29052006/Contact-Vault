@@ -154,10 +154,8 @@ class ContactsFrame(ctk.CTkFrame):
         # Avatar keeps grid_propagate(False) -- unlike the sidebar, it
         # must stay a perfect circle, so we compute its scaled size
         # explicitly instead of letting content auto-resize it.
-        avatar_size = int(38 * self.app.scale)
         avatar_color = theme.AVATAR_COLORS[hash(contact.id) % len(theme.AVATAR_COLORS)]
-        avatar = ctk.CTkFrame(row, width=avatar_size, height=avatar_size,
-                               corner_radius=avatar_size // 2, fg_color=avatar_color)
+        avatar = ctk.CTkFrame(row, width=38, height=38, corner_radius=19, fg_color=avatar_color)
         avatar.grid(row=0, column=0, padx=(14, 12), pady=12)
         avatar.grid_propagate(False)
 
