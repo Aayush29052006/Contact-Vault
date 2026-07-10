@@ -41,17 +41,18 @@ class JSONContactRepository(ContactRepository):
         payload = json.dumps([c.to_dict() for c in contacts], indent=2)
 
         # Atomic write: write to a temp file in the same directory,
-        # then swap it into place with os.replace. This guarantees
-        # the real file is never left half-written if the process
-        # dies mid-save.
-        fd, tmp_path = tempfile.mkstemp(
-            dir=self.file_path.parent, prefix=".tmp_", suffix=".json"
-        )
+        # then swap it into place with os.replace. The try block now
+        # covers mkstemp itself too -- a failure there needs to become
+        # a StorageError just like a failure during write or replace.
+        tmp_path = None
         try:
+            fd, tmp_path = tempfile.mkstemp(
+                dir=self.file_path.parent, prefix=".tmp_", suffix=".json"
+            )
             with os.fdopen(fd, "w", encoding="utf-8") as tmp_file:
                 tmp_file.write(payload)
             os.replace(tmp_path, self.file_path)
         except OSError as exc:
-            if os.path.exists(tmp_path):
+            if tmp_path and os.path.exists(tmp_path):
                 os.remove(tmp_path)
             raise StorageError(f"Could not write {self.file_path}: {exc}") from exc
