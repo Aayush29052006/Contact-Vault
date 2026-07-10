@@ -84,21 +84,33 @@ contactvault/
 ```
 
 ## Technologies Used
+
 - Python 3.11+
-- CustomTkinter (GUI)
-- argparse (CLI, stdlib)
-- email-validator (validation)
-- pytest (testing)
+- CustomTkinter — GUI
+- argparse (stdlib) — CLI
+- email-validator — validation
+- pytest — automated testing
+- GitHub Actions — CI across Ubuntu, Windows, and macOS
 
 ## How It Works
-_TODO — filled in during Step 11 (Documentation)._
+
+1. **Both entry points call one service.** `main.py` checks for command-line arguments — none launches the GUI, any launches the CLI — but both paths end up calling the same `ContactService` methods.
+2. **The service owns every business rule.** Validation, duplicate-checking, and undo all live in `ContactService`. The GUI and CLI only collect input and display results.
+3. **Storage is abstracted behind a repository.** `ContactService` doesn't know or care that data is stored as JSON — it only knows it's talking to something that implements `load()`/`save()`. Swapping to SQLite later would mean writing one new repository class, with zero changes elsewhere.
+4. **Writes are atomic.** Every save writes to a temporary file first, then swaps it into place in one step — a crash or power loss mid-save can never leave `contacts.json` half-written or corrupted.
 
 ## Future Improvements
-_TODO — filled in during Step 11 (Documentation)._
+
+- SQLite backend option for larger contact lists (repository pattern already supports this without touching the service layer)
+- Folder-watcher for fully hands-off CSV auto-import
+- Contact tags/categories
+- Packaged standalone executables (PyInstaller) for one-click install on Windows/macOS/Linux without requiring Python
+- Keyboard-driven row selection + Delete key to remove a contact without clicking
 
 ## License
+
 MIT — see [LICENSE](LICENSE).
 
 ## Acknowledgements
-Built as part of a portfolio following the Google IT Automation with
-Python Professional Certificate.
+
+Built as part of a professional portfolio following the Google IT Automation with Python Professional Certificate.
