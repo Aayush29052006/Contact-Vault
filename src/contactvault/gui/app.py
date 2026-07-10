@@ -8,6 +8,7 @@ from contactvault.repository.json_repository import JSONContactRepository
 from contactvault.services.contact_service import ContactService
 from contactvault.utils.config import load_config
 from contactvault.utils.logger import get_logger
+from contactvault.gui import theme, icons
 from contactvault.gui.frames.contacts_frame import ContactsFrame
 from contactvault.gui.frames.import_export_frame import ImportExportFrame
 from contactvault.gui.frames.settings_frame import SettingsFrame
@@ -17,8 +18,6 @@ logger = get_logger(__name__)
 
 
 class App(ctk.CTk):
-    """Main window: sidebar navigation + swappable content pages."""
-
     def __init__(self) -> None:
         super().__init__()
 
@@ -26,20 +25,24 @@ class App(ctk.CTk):
 
         ctk.set_appearance_mode(config.get("theme", "dark"))
         ctk.set_default_color_theme("blue")
-        # Apply saved text-size preference before building any widgets.
         ctk.set_widget_scaling(config.get("text_scale", 1.0))
 
-        base_width, base_height = 960, 620
-        scale = config.get("text_scale", 1.0)
+        self.fonts = theme.fonts()
 
+        base_width, base_height = 1040, 660
+        scale = config.get("text_scale", 1.0)
+        self.scale = scale
         self.title("ContactVault")
         self.geometry(f"{int(base_width * scale)}x{int(base_height * scale)}")
-        self.minsize(int(780 * scale), int(480 * scale))
+        self.minsize(int(820 * scale), int(520 * scale))
+        self.configure(fg_color=theme.COLOR["bg"])
 
         self.service = ContactService(JSONContactRepository(config["data_file"]))
 
         self.grid_columnconfigure(1, weight=1)
         self.grid_rowconfigure(0, weight=1)
+
+        self._nav_buttons: dict[str, ctk.CTkButton] = {}
 
         self._build_sidebar()
         self._build_content_area()
@@ -54,45 +57,69 @@ class App(ctk.CTk):
         self.show_frame("contacts")
 
     def _build_sidebar(self) -> None:
-        sidebar = ctk.CTkFrame(self, width=210, corner_radius=0)
+        # No grid_propagate(False) here on purpose: the sidebar holds
+        # text (brand name, nav labels) whose rendered width changes
+        # with the text-size setting, so the container must be free
+        # to grow and shrink to fit it -- same lesson as the earlier
+        # Undo-button overflow bug.
+        sidebar = ctk.CTkFrame(self, corner_radius=0, fg_color=theme.COLOR["surface"])
         sidebar.grid(row=0, column=0, sticky="nsw")
-        sidebar.grid_rowconfigure(5, weight=1)
+        sidebar.grid_rowconfigure(6, weight=1)
 
-        ctk.CTkLabel(
-            sidebar, text="ContactVault", font=ctk.CTkFont(size=18, weight="bold"),
-            text_color=("gray10", "gray95"),
-        ).grid(row=0, column=0, padx=16, pady=(20, 10), sticky="w")
+
+        brand = ctk.CTkFrame(sidebar, fg_color="transparent")
+        brand.grid(row=0, column=0, padx=18, pady=(22, 26), sticky="w")
+
+        badge_size = int(36 * self.scale)
+        logo_badge = ctk.CTkFrame(brand, width=badge_size, height=badge_size,
+                                   corner_radius=int(badge_size * 0.28),
+                                   fg_color=theme.COLOR["accent"])
+        
+        logo_badge.grid(row=0, column=0, padx=(0, 10))
+        logo_badge.grid_propagate(False)
+        ctk.CTkLabel(logo_badge, text="CV", text_color="#FFFFFF",
+                     font=self.fonts["logo"]).place(relx=0.5, rely=0.5, anchor="center")
+
+        ctk.CTkLabel(brand, text="ContactVault", font=self.fonts["heading"],
+                     text_color=theme.COLOR["text"]).grid(row=0, column=1, sticky="w")
 
         nav_items = [
-            ("Contacts", "contacts"),
-            ("Import / Export", "import_export"),
-            ("Settings", "settings"),
-            ("About", "about"),
+            ("Contacts", "contacts", "users"),
+            ("Import / Export", "import_export", "upload"),
+            ("Settings", "settings", "settings"),
+            ("About", "about", "info"),
         ]
-        for i, (label, key) in enumerate(nav_items, start=1):
+        for i, (label, key, icon_name) in enumerate(nav_items, start=1):
             btn = ctk.CTkButton(
-                sidebar, text=label, anchor="w", corner_radius=8,
-                fg_color="transparent", hover_color=("gray80", "gray25"),
-                text_color=("gray10", "gray90"),
+                sidebar, text=f"  {label}", anchor="w", corner_radius=theme.RADIUS["sm"],
+                height=40, fg_color="transparent", hover_color=theme.COLOR["surface_alt"],
+                text_color=theme.COLOR["text_secondary"], font=self.fonts["nav"],
+                image=icons.ctk_icon(icon_name, 17, theme.COLOR["text_secondary"][0],
+                                      theme.COLOR["text_secondary"][1]),
+                compound="left",
                 command=lambda k=key: self.show_frame(k),
             )
-            btn.grid(row=i, column=0, padx=12, pady=4, sticky="ew")
-
+            btn.grid(row=i, column=0, padx=12, pady=3, sticky="ew")
+            self._nav_buttons[key] = btn
 
     def _build_content_area(self) -> None:
-        self.content = ctk.CTkFrame(self, corner_radius=0, fg_color="transparent")
-        self.content.grid(row=0, column=1, sticky="nsew", padx=10, pady=10)
+        self.content = ctk.CTkFrame(self, corner_radius=0, fg_color=theme.COLOR["bg"])
+        self.content.grid(row=0, column=1, sticky="nsew")
         self.content.grid_rowconfigure(0, weight=1)
         self.content.grid_columnconfigure(0, weight=1)
 
     def _build_status_bar(self) -> None:
-        self.status_bar = ctk.CTkLabel(
-            self, text="Ready", anchor="w", height=24,
-            fg_color=("gray85", "gray17"), text_color=("gray10", "gray90"),
-            corner_radius=0,
-        )
-        self.status_bar.grid(row=1, column=0, columnspan=2, sticky="ew")
-        self._default_status_color = self.status_bar.cget("text_color")
+        bar = ctk.CTkFrame(self, height=30, corner_radius=0, fg_color=theme.COLOR["surface"])
+        bar.grid(row=1, column=0, columnspan=2, sticky="ew")
+
+        self._status_dot = ctk.CTkLabel(bar, text="●", text_color=theme.COLOR["success"],
+                                         font=self.fonts["caption"])
+        self._status_dot.pack(side="left", padx=(16, 6), pady=4)
+
+        self.status_label = ctk.CTkLabel(bar, text="Ready", anchor="w",
+                                          text_color=theme.COLOR["text_secondary"],
+                                          font=self.fonts["caption"])
+        self.status_label.pack(side="left", pady=4)
 
     def _register_frame(self, key: str, frame_cls) -> None:
         frame = frame_cls(self.content, app=self)
@@ -103,10 +130,16 @@ class App(ctk.CTk):
         self.frames[key].tkraise()
         if hasattr(self.frames[key], "on_show"):
             self.frames[key].on_show()
+        for k, btn in self._nav_buttons.items():
+            if k == key:
+                btn.configure(fg_color=theme.COLOR["accent_soft"], text_color=theme.COLOR["accent"])
+            else:
+                btn.configure(fg_color="transparent", text_color=theme.COLOR["text_secondary"])
 
     def set_status(self, message: str, is_error: bool = False) -> None:
-        color = "#E24B4A" if is_error else self._default_status_color
-        self.status_bar.configure(text=message, text_color=color)
+        color = theme.COLOR["danger"] if is_error else theme.COLOR["success"]
+        self._status_dot.configure(text_color=color)
+        self.status_label.configure(text=message)
         (logger.error if is_error else logger.info)(message)
 
 
