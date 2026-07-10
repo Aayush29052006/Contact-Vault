@@ -5,18 +5,24 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-_DEFAULT_CONFIG_PATH = Path("config/default_config.json")
+DEFAULT_CONFIG_PATH = Path("config/default_config.json")
+
+_DEFAULTS = {
+    "data_file": "output/contacts.json",
+    "theme": "dark",
+    "log_level": "INFO",
+    "text_scale": 1.0,
+}
 
 
-def load_config(path: str | Path = _DEFAULT_CONFIG_PATH) -> dict:
+def load_config(path: str | Path = DEFAULT_CONFIG_PATH) -> dict:
     """Load config from a JSON file, falling back to safe defaults."""
-    defaults = {"data_file": "output/contacts.json", "theme": "dark", "log_level": "INFO"}
     path = Path(path)
     if not path.exists():
-        return defaults
+        return dict(_DEFAULTS)
     try:
         with path.open(encoding="utf-8") as f:
             data = json.load(f)
     except (json.JSONDecodeError, OSError):
-        return defaults
-    return {**defaults, **data}
+        return dict(_DEFAULTS)
+    return {**_DEFAULTS, **data}
