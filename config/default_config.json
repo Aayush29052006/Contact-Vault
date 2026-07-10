@@ -1,5 +1,6 @@
 {
   "data_file": "output/contacts.json",
   "theme": "dark",
-  "log_level": "INFO"
+  "log_level": "INFO",
+  "text_scale": 1.45
 }
