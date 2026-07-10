@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "contactvault"
+version = "0.1.0"
+description = "Cross-platform contact and email list manager"
+requires-python = ">=3.11"
+dependencies = [
+    "customtkinter>=5.2.0",
+    "email-validator>=2.0.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.4.0"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
