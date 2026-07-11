@@ -7,11 +7,32 @@ business rule (validation, duplicate-checking, undo) in one place.
 
 from __future__ import annotations
 
-from contactvault.exceptions import DuplicateContactError, ContactNotFoundError
+import re
+from dataclasses import dataclass, field
+
+from contactvault.exceptions import DuplicateContactError, ContactNotFoundError, InvalidEmailError
 from contactvault.models.contact import Contact
 from contactvault.repository.base import ContactRepository
 from contactvault.services.undo import Command, UndoStack
 from contactvault.validation.email_validator import validate_and_normalize
+
+
+def _derive_name_from_email(email: str) -> str:
+    """Fallback display name when no name is given -- e.g. a bulk
+    import of an email-only list. Turns 'alice.sharma@x.com' into
+    'Alice Sharma' rather than silently accepting a blank name."""
+    local_part = email.split("@")[0]
+    cleaned = re.sub(r"[._\-]+", " ", local_part).strip()
+    return cleaned.title() if cleaned else "Unknown Contact"
+
+
+@dataclass
+class BulkAddResult:
+    """Report of a bulk add: what got added (and whether its name was
+    auto-derived), and what got skipped (and why)."""
+
+    added: list[tuple[Contact, bool]] = field(default_factory=list)
+    skipped: list[tuple[str, str]] = field(default_factory=list)
 
 
 class _AddCommand(Command):
@@ -56,8 +77,8 @@ class ContactService:
         self._repository = repository
         self._contacts: list[Contact] = repository.load()
         self.undo_stack = UndoStack()
+        self.last_name_was_derived: bool = False
 
-    # -- internal helpers --
     def _save(self) -> None:
         self._repository.save(self._contacts)
 
@@ -78,7 +99,6 @@ class ContactService:
             for c in self._contacts
         )
 
-    # -- public API --
     def get_all(self) -> list[Contact]:
         return list(self._contacts)
 
@@ -94,11 +114,59 @@ class ContactService:
         if self._is_duplicate(normalized_email):
             raise DuplicateContactError(normalized_email)
 
-        contact = Contact(name=name.strip(), email=normalized_email)
+        cleaned_name = name.strip()
+        self.last_name_was_derived = not cleaned_name
+        if not cleaned_name:
+            cleaned_name = _derive_name_from_email(normalized_email)
+
+        contact = Contact(name=cleaned_name, email=normalized_email)
         self._contacts.append(contact)
         self._save()
         self.undo_stack.push(_AddCommand(self, contact))
         return contact
+
+    def add_bulk(self, entries: list[tuple[str, str]]) -> BulkAddResult:
+        """Add many (name, email) pairs at once.
+
+        Unlike calling add_contact() in a loop, this validates and
+        dedupes every entry in memory and writes to disk only ONCE at
+        the end -- essential once you're importing hundreds or
+        thousands of contacts instead of just a handful.
+        """
+        result = BulkAddResult()
+        seen_this_batch: set[str] = set()
+
+        for name, email in entries:
+            try:
+                normalized_email = validate_and_normalize(email)
+            except InvalidEmailError as exc:
+                identifier = email.strip() or name.strip() or "(blank)"
+                result.skipped.append((identifier, str(exc)))
+                continue
+
+            key = normalized_email.casefold()
+            if key in seen_this_batch or self._is_duplicate(normalized_email):
+                result.skipped.append(
+                    (normalized_email, f"A contact with email '{normalized_email}' already exists")
+                )
+                continue
+
+            cleaned_name = name.strip()
+            derived = not cleaned_name
+            if not cleaned_name:
+                cleaned_name = _derive_name_from_email(normalized_email)
+
+            contact = Contact(name=cleaned_name, email=normalized_email)
+            self._contacts.append(contact)
+            seen_this_batch.add(key)
+            result.added.append((contact, derived))
+
+        if result.added:
+            self._save()
+            for contact, _ in result.added:
+                self.undo_stack.push(_AddCommand(self, contact))
+
+        return result
 
     def edit_contact(
         self, contact_id: str, name: str | None = None, email: str | None = None
@@ -116,7 +184,9 @@ class ContactService:
             if self._is_duplicate(new_email, exclude_id=contact_id):
                 raise DuplicateContactError(new_email)
 
-        current.name = name.strip() if name is not None else current.name
+        if name is not None:
+            cleaned_name = name.strip()
+            current.name = cleaned_name if cleaned_name else _derive_name_from_email(new_email)
         current.email = new_email
         current.touch()
         self._save()

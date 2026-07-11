@@ -112,3 +112,66 @@ def test_bulk_add_of_many_contacts(service):
     for i in range(200):
         service.add_contact(f"User {i}", f"user{i}@example.com")
     assert len(service.get_all()) == 200
+
+
+def test_add_bulk_adds_multiple_contacts_with_a_single_save(service, monkeypatch):
+    save_calls = []
+    monkeypatch.setattr(service._repository, "save", lambda contacts: save_calls.append(len(contacts)))
+
+    entries = [(f"User {i}", f"user{i}@example.com") for i in range(50)]
+    result = service.add_bulk(entries)
+
+    assert len(result.added) == 50
+    assert len(save_calls) == 1
+
+
+def test_add_bulk_derives_names_when_blank(service):
+    result = service.add_bulk([("", "alice.sharma@example.com")])
+    contact, derived = result.added[0]
+    assert contact.name == "Alice Sharma"
+    assert derived is True
+
+
+def test_add_bulk_skips_duplicates_within_the_same_batch(service):
+    entries = [("Alice", "alice@example.com"), ("Alice Again", "ALICE@EXAMPLE.COM")]
+    result = service.add_bulk(entries)
+    assert len(result.added) == 1
+    assert len(result.skipped) == 1
+
+
+def test_add_bulk_skips_duplicates_against_existing_contacts(service):
+    service.add_contact("Alice", "alice@example.com")
+    result = service.add_bulk([("Alice Again", "alice@example.com")])
+    assert len(result.added) == 0
+    assert len(result.skipped) == 1
+
+
+def test_add_bulk_skips_invalid_emails(service):
+    entries = [("Alice", "alice@example.com"), ("Bad", "not-an-email")]
+    result = service.add_bulk(entries)
+    assert len(result.added) == 1
+    assert len(result.skipped) == 1
+
+
+def test_add_bulk_with_empty_list_does_not_save(service, monkeypatch):
+    save_calls = []
+    monkeypatch.setattr(service._repository, "save", lambda contacts: save_calls.append(contacts))
+    result = service.add_bulk([])
+    assert result.added == []
+    assert save_calls == []
+
+def test_add_contact_with_blank_name_derives_from_email(service):
+    contact = service.add_contact("", "alice.sharma@example.com")
+    assert contact.name == "Alice Sharma"
+    assert service.last_name_was_derived is True
+
+
+def test_add_contact_with_provided_name_is_not_derived(service):
+    contact = service.add_contact("Alice", "alice@example.com")
+    assert contact.name == "Alice"
+    assert service.last_name_was_derived is False
+
+
+def test_derived_name_handles_dots_and_underscores(service):
+    contact = service.add_contact("", "john_doe.smith@example.com")
+    assert contact.name == "John Doe Smith"
