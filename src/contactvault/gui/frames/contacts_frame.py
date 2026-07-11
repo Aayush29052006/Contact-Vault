@@ -76,21 +76,21 @@ class ContactsFrame(ctk.CTkFrame):
         )
         self.add_btn.grid(row=0, column=0, padx=(0, 8))
 
+        # Filled background (not transparent+border) -- a filled shape
+        # is always visibly a box regardless of how the border renders,
+        # closing the recurring "invisible outline" bug for good.
         self.undo_btn = ctk.CTkButton(
             buttons, text="Undo", height=38, width=90, corner_radius=theme.RADIUS["md"],
-            fg_color="transparent", border_width=2, border_color=theme.COLOR["border_strong"],
+            fg_color=theme.COLOR["surface_alt"], hover_color=theme.COLOR["border_strong"],
             text_color=theme.COLOR["text"], font=self.fonts["body"], command=self._on_undo,
         )
         self.undo_btn.grid(row=0, column=1)
-
 
         for entry in (self.name_entry, self.email_entry):
             entry.bind("<Return>", lambda e: self._on_add())
             entry.bind("<Escape>", lambda e: self._cancel_edit())
 
     def _build_search_bar(self) -> None:
-        # No fixed height / no grid_propagate(False): lets the bar grow
-        # to fit the entry's scaled font instead of clipping it.
         wrapper = ctk.CTkFrame(self, corner_radius=theme.RADIUS["pill"],
                                 fg_color=theme.COLOR["surface"], border_width=1,
                                 border_color=theme.COLOR["border"])
@@ -151,14 +151,10 @@ class ContactsFrame(ctk.CTkFrame):
         row.grid(row=index, column=0, sticky="ew", pady=4)
         row.grid_columnconfigure(1, weight=1)
 
-        # Avatar keeps grid_propagate(False) -- unlike the sidebar, it
-        # must stay a perfect circle, so we compute its scaled size
-        # explicitly instead of letting content auto-resize it.
         avatar_color = theme.AVATAR_COLORS[hash(contact.id) % len(theme.AVATAR_COLORS)]
         avatar = ctk.CTkFrame(row, width=38, height=38, corner_radius=19, fg_color=avatar_color)
         avatar.grid(row=0, column=0, padx=(14, 12), pady=12)
         avatar.grid_propagate(False)
-
         initial = (contact.name.strip()[:1] or "?").upper()
         ctk.CTkLabel(avatar, text=initial, text_color="#FFFFFF",
                      font=self.fonts["body_bold"]).place(relx=0.5, rely=0.5, anchor="center")
@@ -173,9 +169,10 @@ class ContactsFrame(ctk.CTkFrame):
         actions = ctk.CTkFrame(row, fg_color="transparent")
         actions.grid(row=0, column=2, padx=(0, 12), pady=10)
 
+        # Filled style here too, for the same reason as Undo above.
         ctk.CTkButton(
             actions, text="Edit", width=76, height=32, corner_radius=theme.RADIUS["sm"],
-            fg_color="transparent", border_width=1, border_color=theme.COLOR["border"],
+            fg_color=theme.COLOR["surface_alt"], hover_color=theme.COLOR["border_strong"],
             text_color=theme.COLOR["text"],
             image=icons.ctk_icon("edit", 13, theme.COLOR["text"][0], theme.COLOR["text"][1]),
             compound="left", font=self.fonts["caption"],

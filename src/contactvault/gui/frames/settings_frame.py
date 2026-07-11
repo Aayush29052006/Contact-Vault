@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from logging import config
 
 import customtkinter as ctk
 
@@ -57,14 +58,12 @@ class SettingsFrame(ctk.CTkFrame):
     def _build_appearance_card(self, config: dict) -> None:
         card = self._card("Appearance", "settings")
 
-        ctk.CTkLabel(card, text="Theme", font=self.fonts["caption"],
-                     text_color=theme.COLOR["text_secondary"]).pack(anchor="w", padx=18)
         self.theme_option = ctk.CTkOptionMenu(
-            card, values=["dark", "light"], width=160, height=34,
+            card, values=["Dark", "Light"], width=160, height=34,
             corner_radius=theme.RADIUS["md"], fg_color=theme.COLOR["accent"],
             button_color=theme.COLOR["accent"], button_hover_color=theme.COLOR["accent_hover"],
         )
-        self.theme_option.set(config["theme"])
+        self.theme_option.set(config["theme"].capitalize())
         self.theme_option.pack(anchor="w", padx=18, pady=(4, 14))
 
         ctk.CTkLabel(card, text="Log level", font=self.fonts["caption"],
@@ -100,7 +99,7 @@ class SettingsFrame(ctk.CTkFrame):
 
         ctk.CTkButton(
             card, text="Preview size", height=32, width=130, corner_radius=theme.RADIUS["sm"],
-            fg_color="transparent", border_width=1, border_color=theme.COLOR["border"],
+            fg_color=theme.COLOR["surface_alt"], hover_color=theme.COLOR["border_strong"],
             text_color=theme.COLOR["text"], font=self.fonts["caption"],
             command=self._apply_preview,
         ).pack(anchor="w", padx=18, pady=(4, 6))
@@ -121,10 +120,11 @@ class SettingsFrame(ctk.CTkFrame):
         ctk.set_widget_scaling(self._scale)
         new_config = {
             "data_file": self.data_file_entry.get().strip(),
-            "theme": self.theme_option.get(),
+            "theme": self.theme_option.get().lower(),
             "log_level": self.log_level_option.get(),
             "text_scale": self._scale,
         }
+
         DEFAULT_CONFIG_PATH.write_text(json.dumps(new_config, indent=2), encoding="utf-8")
         ctk.set_appearance_mode(new_config["theme"])
         self.app.set_status("Settings saved.")

@@ -13,7 +13,6 @@ class ConfirmDialog(ctk.CTkToplevel):
                  confirm_text: str = "Confirm", danger: bool = False, on_confirm=None) -> None:
         super().__init__(parent)
         self.title(title)
-        self.geometry("400x200")
         self.resizable(False, False)
         self.configure(fg_color=theme.COLOR["surface"])
         self._on_confirm = on_confirm
@@ -26,13 +25,13 @@ class ConfirmDialog(ctk.CTkToplevel):
         ctk.CTkLabel(self, text=title, font=fonts["subheading"],
                      text_color=icon_color).pack(pady=(26, 8), padx=24, anchor="w")
         ctk.CTkLabel(self, text=message, font=fonts["body"], text_color=theme.COLOR["text_secondary"],
-                     wraplength=340, justify="left").pack(padx=24, anchor="w")
+                     wraplength=360, justify="left").pack(padx=24, anchor="w")
 
         btn_row = ctk.CTkFrame(self, fg_color="transparent")
         btn_row.pack(side="bottom", fill="x", padx=24, pady=22)
 
         ctk.CTkButton(btn_row, text="Cancel", fg_color="transparent", border_width=1,
-                      border_color=theme.COLOR["border"], text_color=theme.COLOR["text"],
+                      border_color=theme.COLOR["border_strong"], text_color=theme.COLOR["text"],
                       corner_radius=theme.RADIUS["md"], command=self.destroy, width=100
                       ).pack(side="right", padx=(8, 0))
 
@@ -43,6 +42,25 @@ class ConfirmDialog(ctk.CTkToplevel):
                       ).pack(side="right")
 
         self.bind("<Escape>", lambda e: self.destroy())
+
+        # Size the window to fit its ACTUAL content instead of a
+        # hardcoded guess. update_idletasks() forces Tk to compute
+        # real widget sizes first, then we read them back -- this is
+        # the same class of bug (fixed pixel size vs. real content
+        # size) we hit multiple times earlier with buttons and cards.
+        self.update_idletasks()
+        width = max(self.winfo_reqwidth() + 20, 380)
+        height = self.winfo_reqheight() + 20
+        self.geometry(f"{width}x{height}")
+
+        # Center over the parent window instead of an arbitrary OS
+        # default position.
+        parent.update_idletasks()
+        px, py = parent.winfo_rootx(), parent.winfo_rooty()
+        pw, ph = parent.winfo_width(), parent.winfo_height()
+        x = px + (pw - width) // 2
+        y = py + (ph - height) // 3
+        self.geometry(f"+{x}+{y}")
 
     def _confirm(self) -> None:
         self.destroy()

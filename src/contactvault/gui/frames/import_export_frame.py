@@ -44,7 +44,7 @@ class ImportExportFrame(ctk.CTkFrame):
 
         ctk.CTkButton(
             btn_row, text="Export CSV", height=38, width=140, corner_radius=theme.RADIUS["md"],
-            fg_color="transparent", border_width=1, border_color=theme.COLOR["border_strong"],
+            fg_color=theme.COLOR["surface_alt"], hover_color=theme.COLOR["border_strong"],
             text_color=theme.COLOR["text"],
             image=icons.ctk_icon("download", 15, theme.COLOR["text"][0], theme.COLOR["text"][1]),
             compound="left", font=self.fonts["body"], command=self._export_csv,
