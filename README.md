@@ -8,15 +8,42 @@ A cross-platform, production-grade contact and email list manager, with both a m
 - Case- and Unicode-aware duplicate detection (`alice@x.com` and `ALICE@X.com` are treated as the same contact)
 - Email validation via the `email-validator` library (RFC-compliant, not regex-based)
 - Undo for the last add / edit / delete action (Command pattern)
-- Bulk CSV import with a live progress bar and a per-row report of what was added vs. skipped
+- Bulk import from CSV **or** pasted emails (no file needed) — a live progress bar and per-row report of what was added vs. skipped, with names auto-generated from the email when left blank
 - CSV export
 - Adjustable UI text size (80%–150%), saved across restarts
 - Full light/dark theme support
 - Keyboard support: Enter to submit, Escape to cancel an edit or clear search, arrow/Page Up/Page Down/Home/End to scroll the contact list
 - CLI with the same feature set as the GUI, for scripting and automation (`add`, `list`, `search`, `edit`, `delete`)
+- Confirmation dialog before deleting a contact
 - Atomic, crash-safe file writes — a failed save can never corrupt existing data
 - Structured logging to `logs/`
-- 43 automated tests covering business logic, validation, storage, and CLI behavior
+- 52 automated tests covering business logic, validation, storage, and CLI behavior
+
+
+## Screenshots
+
+<table>
+<tr>
+<td align="center"><b>Light</b></td>
+<td align="center"><b>Dark</b></td>
+</tr>
+<tr>
+<td><img src="screenshots/contacts_light.png" width="400"/></td>
+<td><img src="screenshots/contacts_dark.png" width="400"/></td>
+</tr>
+<tr>
+<td><img src="screenshots/import_export_light.png" width="400"/></td>
+<td><img src="screenshots/import_export_dark.png" width="400"/></td>
+</tr>
+<tr>
+<td><img src="screenshots/settings_light.png" width="400"/></td>
+<td><img src="screenshots/settings_dark.png" width="400"/></td>
+</tr>
+<tr>
+<td><img src="screenshots/about_light.png" width="400"/></td>
+<td><img src="screenshots/about_dark.png" width="400"/></td>
+</tr>
+</table>
 
 ## Installation
 
@@ -74,7 +101,7 @@ contactvault/
 ├── assets/             # icons and static assets
 ├── docs/                # architecture notes and guides
 ├── screenshots/         # app screenshots
-├── tests/               # pytest suite (43 tests)
+├── tests/               # pytest suite (52 tests)
 ├── logs/                 # runtime logs (gitignored)
 ├── output/               # exported files and data (gitignored)
 ├── config/               # default_config.json
@@ -82,11 +109,10 @@ contactvault/
 ├── main.py               # entry point (GUI or CLI dispatch)
 └── requirements.txt
 ```
-
 ## Technologies Used
 
 - Python 3.11+
-- CustomTkinter — GUI
+- CustomTkinter — GUI, with a custom design system (color tokens, hand-drawn icon set, avatar initials)
 - argparse (stdlib) — CLI
 - email-validator — validation
 - pytest — automated testing
