@@ -122,8 +122,6 @@ class ContactsFrame(ctk.CTkFrame):
         canvas.bind("<Up>", lambda e: canvas.yview_scroll(-1, "units"))
         canvas.bind("<Down>", lambda e: canvas.yview_scroll(1, "units"))
 
-    def on_show(self) -> None:
-        self.refresh()
 
     def refresh(self) -> None:
         for child in self.list_frame.winfo_children():
@@ -140,7 +138,7 @@ class ContactsFrame(ctk.CTkFrame):
                 text_color=theme.COLOR["text_muted"], font=self.fonts["body"],
             ).grid(row=0, column=0, pady=40)
             return
-
+        
         for i, contact in enumerate(contacts):
             self._build_row(i, contact)
 
