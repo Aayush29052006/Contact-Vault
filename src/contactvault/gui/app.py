@@ -144,9 +144,8 @@ class App(ctk.CTk):
         self.status_label.configure(text=message)
         (logger.error if is_error else logger.info)(message)
 
-
 def run() -> None:
     App().mainloop()
-
+    
 if __name__ == "__main__":
     run()
