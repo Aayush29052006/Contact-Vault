@@ -154,16 +154,29 @@ def icon(name: str, size: int = 18, color: str = "#FFFFFF") -> Image.Image:
     return _DRAW[name](size, color)
 
 
+# Cache built CTkImage objects -- without this, every call redraws
+# the icon from scratch via Pillow, even when an identical icon (same
+# name/size/color) was already drawn moments earlier. Reusing a
+# CTkImage instance across multiple widgets is safe and standard.
+_icon_cache: dict[tuple, "ctk.CTkImage"] = {}
+
+
 def ctk_icon(name: str, size: int = 18, light: str = "#1B1E27", dark: str = "#F1F2F6") -> ctk.CTkImage:
     """Theme-adaptive icon: different flat color per light/dark mode."""
-    return ctk.CTkImage(
-        light_image=icon(name, size, light),
-        dark_image=icon(name, size, dark),
-        size=(size, size),
-    )
+    key = ("adaptive", name, size, light, dark)
+    if key not in _icon_cache:
+        _icon_cache[key] = ctk.CTkImage(
+            light_image=icon(name, size, light),
+            dark_image=icon(name, size, dark),
+            size=(size, size),
+        )
+    return _icon_cache[key]
 
 
 def solid_icon(name: str, size: int = 18, color: str = "#FFFFFF") -> ctk.CTkImage:
     """Fixed single-color icon (e.g. white icon on a solid accent button)."""
-    img = icon(name, size, color)
-    return ctk.CTkImage(light_image=img, dark_image=img, size=(size, size))
+    key = ("solid", name, size, color)
+    if key not in _icon_cache:
+        img = icon(name, size, color)
+        _icon_cache[key] = ctk.CTkImage(light_image=img, dark_image=img, size=(size, size))
+    return _icon_cache[key]

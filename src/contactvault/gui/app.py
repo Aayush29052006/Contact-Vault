@@ -48,12 +48,16 @@ class App(ctk.CTk):
         self._build_content_area()
         self._build_status_bar()
 
+       # Only "contacts" is built now. The other three pages are
+        # constructed on first visit (see show_frame below) instead
+        # of all four being built before the window even appears.
         self.frames: dict[str, ctk.CTkFrame] = {}
-        self._register_frame("contacts", ContactsFrame)
-        self._register_frame("import_export", ImportExportFrame)
-        self._register_frame("settings", SettingsFrame)
-        self._register_frame("about", AboutFrame)
-
+        self._frame_classes = {
+            "contacts": ContactsFrame,
+            "import_export": ImportExportFrame,
+            "settings": SettingsFrame,
+            "about": AboutFrame,
+        }
         self.show_frame("contacts")
 
     def _build_sidebar(self) -> None:
@@ -128,14 +132,11 @@ class App(ctk.CTk):
         self.frames[key] = frame
 
     def show_frame(self, key: str) -> None:
+        if key not in self.frames:
+            self._register_frame(key, self._frame_classes[key])
         self.frames[key].tkraise()
         if hasattr(self.frames[key], "on_show"):
             self.frames[key].on_show()
-        for k, btn in self._nav_buttons.items():
-            if k == key:
-                btn.configure(fg_color=theme.COLOR["accent_soft"], text_color=theme.COLOR["accent"])
-            else:
-                btn.configure(fg_color="transparent", text_color=theme.COLOR["text_secondary"])
 
     def set_status(self, message: str, is_error: bool = False) -> None:
         color = theme.COLOR["danger"] if is_error else theme.COLOR["success"]
@@ -146,7 +147,6 @@ class App(ctk.CTk):
 
 def run() -> None:
     App().mainloop()
-
 
 if __name__ == "__main__":
     run()
