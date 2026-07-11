@@ -32,7 +32,7 @@ class App(ctk.CTk):
         base_width, base_height = 1040, 660
         scale = config.get("text_scale", 1.0)
         self.scale = scale
-        self.title("ContactVault")
+        self.title("Contact Vault")
         self.geometry(f"{int(base_width * scale)}x{int(base_height * scale)}")
         self.minsize(int(820 * scale), int(520 * scale))
         self.configure(fg_color=theme.COLOR["bg"])
@@ -85,7 +85,7 @@ class App(ctk.CTk):
         )
         logo_badge.grid(row=0, column=0, padx=(0, 10))
 
-        ctk.CTkLabel(brand, text="ContactVault", font=self.fonts["heading"],
+        ctk.CTkLabel(brand, text="Contact Vault", font=self.fonts["heading"],
                      text_color=theme.COLOR["text"]).grid(row=0, column=1, sticky="w")
 
         nav_items = [

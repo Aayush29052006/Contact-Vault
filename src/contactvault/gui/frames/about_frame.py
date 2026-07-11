@@ -25,9 +25,9 @@ class AboutFrame(ctk.CTkFrame):
         )
         badge.pack(pady=(40, 16))
 
-        ctk.CTkLabel(wrapper, text="ContactVault", font=fonts["heading"],
+        ctk.CTkLabel(wrapper, text="Contact Vault", font=fonts["heading"],
                      text_color=theme.COLOR["text"]).pack()
-        ctk.CTkLabel(wrapper, text="Version 0.1.0", font=fonts["caption"],
+        ctk.CTkLabel(wrapper, text="Version 1.0.0", font=fonts["caption"],
                      text_color=theme.COLOR["text_muted"]).pack(pady=(2, 20))
 
         card = ctk.CTkFrame(wrapper, corner_radius=theme.RADIUS["lg"],

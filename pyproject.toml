@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "contactvault"
-version = "0.1.0"
+version = "1.0.0"
 description = "Cross-platform contact and email list manager"
 requires-python = ">=3.11"
 dependencies = [
