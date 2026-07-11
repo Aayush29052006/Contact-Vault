@@ -19,13 +19,14 @@ class ContactsFrame(ctk.CTkFrame):
 
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(3, weight=1)
-
+        
         self._build_header()
         self._build_add_form()
         self._build_search_bar()
         self._build_list_area()
 
         self.refresh()
+        self._last_rendered_version = self.service.version
 
     def _build_header(self) -> None:
         header = ctk.CTkFrame(self, fg_color="transparent")
@@ -123,10 +124,27 @@ class ContactsFrame(ctk.CTkFrame):
         canvas.bind("<Down>", lambda e: canvas.yview_scroll(1, "units"))
 
 
+    def on_show(self) -> None:
+        # Cheap check: only redraw if data actually changed since we
+        # last rendered. Fixes the "added contacts elsewhere don't
+        # appear here" bug without reintroducing the tab-switch
+        # slowdown we fixed earlier -- unchanged visits stay instant.
+        if self.service.version != self._last_rendered_version:
+            self.refresh()
+
+    def on_show(self) -> None:
+        # Cheap check: only redraw if data actually changed since we
+        # last rendered. Fixes "added elsewhere doesn't appear here"
+        # without reintroducing the earlier tab-switch slowdown --
+        # unchanged visits stay instant.
+        if self.service.version != self._last_rendered_version:
+            self.refresh()
+
     def refresh(self) -> None:
+        self._last_rendered_version = self.service.version
         for child in self.list_frame.winfo_children():
             child.destroy()
-
+            
         query = self.search_entry.get().strip()
         contacts = self.service.search(query) if query else self.service.get_all()
         self.count_badge.configure(text=str(len(self.service.get_all())))

@@ -78,9 +78,15 @@ class ContactService:
         self._contacts: list[Contact] = repository.load()
         self.undo_stack = UndoStack()
         self.last_name_was_derived: bool = False
+        # Bumped on every real save (see _save below). Lets other
+        # parts of the UI (like ContactsFrame) cheaply check "did
+        # anything change since I last rendered?" instead of either
+        # always re-rendering (slow) or never re-rendering (stale).
+        self.version: int = 0
 
     def _save(self) -> None:
         self._repository.save(self._contacts)
+        self.version += 1
 
     def _remove_and_save(self, contact_id: str) -> None:
         self._contacts = [c for c in self._contacts if c.id != contact_id]

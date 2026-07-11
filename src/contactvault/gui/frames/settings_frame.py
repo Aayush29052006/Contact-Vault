@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-from logging import config
 
 import customtkinter as ctk
 
@@ -48,12 +47,21 @@ class SettingsFrame(ctk.CTkFrame):
         card = self._card("Data", "download")
         ctk.CTkLabel(card, text="Data file path", font=self.fonts["caption"],
                      text_color=theme.COLOR["text_secondary"]).pack(anchor="w", padx=18)
+        
         self.data_file_entry = ctk.CTkEntry(
             card, width=420, height=36, corner_radius=theme.RADIUS["md"],
             fg_color=theme.COLOR["surface_alt"], border_color=theme.COLOR["border"],
         )
         self.data_file_entry.insert(0, config["data_file"])
         self.data_file_entry.pack(anchor="w", padx=18, pady=(4, 18))
+
+        # Live sanitization: strip wrapping quotes as soon as they're
+        # typed or pasted, not only when Save is clicked. <<Paste>>
+        # catches Ctrl+V specifically; after_idle() waits until Tk has
+        # actually finished inserting the text before we touch it,
+        # avoiding a race where we'd clean up text that isn't there yet.
+        self.data_file_entry.bind("<KeyRelease>", self._sanitize_path_entry)
+        self.data_file_entry.bind("<<Paste>>", self._sanitize_path_entry)
 
     def _build_appearance_card(self, config: dict) -> None:
         card = self._card("Appearance", "settings")
@@ -109,6 +117,20 @@ class SettingsFrame(ctk.CTkFrame):
             text_color=theme.COLOR["text_muted"], font=self.fonts["caption"], justify="left",
         ).pack(anchor="w", padx=18, pady=(0, 18))
 
+    def _sanitize_path_entry(self, event=None) -> None:
+        self.after_idle(self._strip_quotes_now)
+
+    def _strip_quotes_now(self) -> None:
+        current = self.data_file_entry.get()
+        cleaned = current.strip('"').strip("'")
+        if cleaned == current:
+            return
+        cursor_pos = self.data_file_entry.index("insert")
+        removed_from_start = len(current) - len(current.lstrip('"\''))
+        self.data_file_entry.delete(0, "end")
+        self.data_file_entry.insert(0, cleaned)
+        self.data_file_entry.icursor(max(0, cursor_pos - removed_from_start))
+
     def _on_slider_move(self, value: float) -> None:
         self._scale = round(value, 2)
         self.scale_label.configure(text=f"{int(self._scale * 100)}%")
@@ -118,13 +140,17 @@ class SettingsFrame(ctk.CTkFrame):
 
     def _save(self) -> None:
         ctk.set_widget_scaling(self._scale)
+        raw_path = self.data_file_entry.get().strip()
+        data_file = raw_path.strip('"').strip("'")
         new_config = {
-            "data_file": self.data_file_entry.get().strip(),
+            "data_file": data_file,
             "theme": self.theme_option.get().lower(),
             "log_level": self.log_level_option.get(),
             "text_scale": self._scale,
         }
 
         DEFAULT_CONFIG_PATH.write_text(json.dumps(new_config, indent=2), encoding="utf-8")
+        self.data_file_entry.delete(0, "end")
+        self.data_file_entry.insert(0, data_file)
         ctk.set_appearance_mode(new_config["theme"])
-        self.app.set_status("Settings saved.")
+        self.app.set_status("Settings saved. Restart the app to use the new data file path.")
