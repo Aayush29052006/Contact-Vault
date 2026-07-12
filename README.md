@@ -1,4 +1,4 @@
-# ContactVault
+# Contact Vault
 
 A cross-platform, production-grade contact and email list manager, with both a modern desktop GUI (CustomTkinter) and a full CLI, sharing a single validated, deduplicated data layer.
 
