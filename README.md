@@ -50,8 +50,8 @@ A cross-platform, production-grade contact and email list manager, with both a m
 **Requirements:** Python 3.11+
 
 ```bash
-git clone https://github.com/Aayush29052006/contactvault.git
-cd contactvault
+git clone https://github.com/Aayush29052006/Contact-Vault.git
+cd Contact-Vault
 ```
 
 **Linux / macOS:**
