@@ -20,8 +20,8 @@
                                          ▼
                      ┌────────────────────────────────────┐
                      │     JSONContactRepository          │
-                     │ • Atomic Read/Write               │
-                     │ • Data Persistence                │
+                     │ • Atomic Read/Write                │
+                     │ • Data Persistence                 │
                      └──────────────────┬─────────────────┘
                                         │
                                         ▼
