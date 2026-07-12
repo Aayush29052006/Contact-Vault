@@ -1,7 +1,7 @@
 # Security Policy
 
 ## Supported Versions
-Only the latest released version of ContactVault receives security updates.
+Only the latest released version of Contact Vault receives security updates.
 
 ## Reporting a Vulnerability
 If you discover a security vulnerability, please open a private
