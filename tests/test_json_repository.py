@@ -74,3 +74,19 @@ def test_original_file_untouched_if_write_fails_midway(tmp_path, monkeypatch):
         repo.save([Contact(name="Bob", email="bob@example.com")])
 
     assert path.read_text(encoding="utf-8") == original_content
+
+
+def test_non_list_json_raises_storage_error(tmp_path):
+    path = tmp_path / "invalid_structure.json"
+    path.write_text('{"name": "Alice"}', encoding="utf-8")
+
+    with pytest.raises(StorageError, match="must be a JSON list"):
+        JSONContactRepository(path).load()
+
+
+def test_invalid_contact_data_raises_storage_error(tmp_path):
+    path = tmp_path / "invalid_contact.json"
+    path.write_text('[{"name": "Alice"}]', encoding="utf-8")
+
+    with pytest.raises(StorageError, match="Invalid contact data"):
+        JSONContactRepository(path).load()

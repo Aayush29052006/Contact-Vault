@@ -43,6 +43,20 @@ class _AddCommand(Command):
     def undo(self) -> None:
         self._service._remove_and_save(self._contact.id)
 
+class _BulkAddCommand(Command):
+    def __init__(self, service: "ContactService", contacts: list[Contact]) -> None:
+        self._service = service
+        self._contacts = contacts
+
+    def undo(self) -> None:
+        contact_ids = {contact.id for contact in self._contacts}
+        self._service._contacts = [
+            contact
+            for contact in self._service._contacts
+            if contact.id not in contact_ids
+        ]
+        self._service._save()
+
 
 class _DeleteCommand(Command):
     def __init__(self, service: "ContactService", contact: Contact, index: int) -> None:
@@ -169,22 +183,28 @@ class ContactService:
 
         if result.added:
             self._save()
-            for contact, _ in result.added:
-                self.undo_stack.push(_AddCommand(self, contact))
+            added_contacts = [contact for contact, _ in result.added]
+            self.undo_stack.push(_BulkAddCommand(self, added_contacts))
 
         return result
 
     def edit_contact(
-        self, contact_id: str, name: str | None = None, email: str | None = None
-    ) -> Contact:
+            self, contact_id: str, name: str | None = None, email: str | None = None
+        ) -> Contact:
         index = self._find_index(contact_id)
         current = self._contacts[index]
+
         previous_snapshot = Contact(
-            name=current.name, email=current.email, id=current.id,
-            created_at=current.created_at, updated_at=current.updated_at,
+            name=current.name,
+            email=current.email,
+            id=current.id,
+            created_at=current.created_at,
+            updated_at=current.updated_at,
         )
 
         new_email = current.email
+        new_name = current.name
+
         if email is not None:
             new_email = validate_and_normalize(email)
             if self._is_duplicate(new_email, exclude_id=contact_id):
@@ -192,12 +212,27 @@ class ContactService:
 
         if name is not None:
             cleaned_name = name.strip()
-            current.name = cleaned_name if cleaned_name else _derive_name_from_email(new_email)
-        current.email = new_email
-        current.touch()
-        self._save()
+            new_name = cleaned_name if cleaned_name else _derive_name_from_email(new_email)
+
+        edited_contact = Contact(
+            name=new_name,
+            email=new_email,
+            id=current.id,
+            created_at=current.created_at,
+            updated_at=current.updated_at,
+        )
+        edited_contact.touch()
+
+        self._contacts[index] = edited_contact
+
+        try:
+            self._save()
+        except Exception:
+            self._contacts[index] = current
+            raise
+
         self.undo_stack.push(_EditCommand(self, contact_id, previous_snapshot))
-        return current
+        return edited_contact
 
     def delete_contact(self, contact_id: str) -> None:
         index = self._find_index(contact_id)

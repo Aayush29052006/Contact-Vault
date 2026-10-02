@@ -132,13 +132,7 @@ class ContactsFrame(ctk.CTkFrame):
         if self.service.version != self._last_rendered_version:
             self.refresh()
 
-    def on_show(self) -> None:
-        # Cheap check: only redraw if data actually changed since we
-        # last rendered. Fixes "added elsewhere doesn't appear here"
-        # without reintroducing the earlier tab-switch slowdown --
-        # unchanged visits stay instant.
-        if self.service.version != self._last_rendered_version:
-            self.refresh()
+
 
     def refresh(self) -> None:
         self._last_rendered_version = self.service.version
