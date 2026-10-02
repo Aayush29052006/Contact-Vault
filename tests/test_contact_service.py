@@ -8,6 +8,7 @@ from contactvault.exceptions import (
     ContactNotFoundError,
     DuplicateContactError,
     InvalidEmailError,
+    StorageError,
 )
 
 
@@ -175,3 +176,39 @@ def test_add_contact_with_provided_name_is_not_derived(service):
 def test_derived_name_handles_dots_and_underscores(service):
     contact = service.add_contact("", "john_doe.smith@example.com")
     assert contact.name == "John Doe Smith"
+
+def test_edit_contact_restores_original_on_save_failure(service, monkeypatch):
+    original = service.add_contact("Alice", "alice@example.com")
+
+    def fail_save():
+        raise StorageError("simulated save failure")
+
+    monkeypatch.setattr(service, "_save", fail_save)
+
+    with pytest.raises(StorageError):
+        service.edit_contact(original.id, name="Changed")
+
+    restored = service.get_all()[0]
+
+    assert restored.name == "Alice"
+    assert restored.email == "alice@example.com"
+
+def test_undo_bulk_add_removes_all_imported_contacts(service):
+    service.add_contact("Existing", "existing@example.com")
+
+    entries = [
+        ("Alice", "alice@example.com"),
+        ("Bob", "bob@example.com"),
+        ("Charlie", "charlie@example.com"),
+    ]
+
+    result = service.add_bulk(entries)
+
+    assert len(result.added) == 3
+    assert len(service.get_all()) == 4
+
+    assert service.undo() is True
+
+    assert [contact.email for contact in service.get_all()] == [
+        "existing@example.com"
+    ]

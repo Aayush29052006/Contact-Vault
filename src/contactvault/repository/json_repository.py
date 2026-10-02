@@ -21,6 +21,7 @@ class JSONContactRepository(ContactRepository):
     def load(self) -> list[Contact]:
         if not self.file_path.exists():
             return []
+
         try:
             raw = self.file_path.read_text(encoding="utf-8")
         except OSError as exc:
@@ -34,7 +35,13 @@ class JSONContactRepository(ContactRepository):
         except json.JSONDecodeError as exc:
             raise StorageError(f"Corrupted data file {self.file_path}: {exc}") from exc
 
-        return [Contact.from_dict(item) for item in data]
+        if not isinstance(data, list):
+            raise StorageError("Contact data must be a JSON list")
+
+        try:
+            return [Contact.from_dict(item) for item in data]
+        except (KeyError, TypeError) as exc:
+            raise StorageError("Invalid contact data") from exc
 
     def save(self, contacts: list[Contact]) -> None:
         self.file_path.parent.mkdir(parents=True, exist_ok=True)
